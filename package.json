@@ -1,0 +1,28 @@
+{
+    "name": "akihabarra-bot",
+    "version": "1.0.0",
+    "description": "A Telegram bot to manage balance in a snack bar",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ablanco/akihabarra-bot.git"
+    },
+    "author": "alejandro.b.e@gmail.com",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/ablanco/akihabarra-bot/issues"
+    },
+    "homepage": "https://github.com/ablanco/akihabarra-bot#readme",
+    "dependencies": {
+        "telegraf": "^4.12.2"
+    },
+    "devDependencies": {
+        "eslint": "^8.39.0",
+        "eslint-config-prettier": "^8.8.0",
+        "prettier": "^2.8.8"
+    }
+}
