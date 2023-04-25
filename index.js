@@ -6,8 +6,13 @@ import Settings from './src/settings.js';
 
 const bot = new Telegraf(Settings.token);
 
-bot.command('help', function (ctx) {
-    ctx.replyWithHTML(['/ayuda\n  Muestra este mensaje de ayuda'].join('\n'));
+const helpHTML = ['/ayuda\n  Muestra este mensaje de ayuda'].join('\n');
+
+bot.command('start', function (ctx) {
+    ctx.replyWithHTML(helpHTML);
+});
+bot.command('ayuda', function (ctx) {
+    ctx.replyWithHTML(helpHTML);
 });
 
 bot.launch();
