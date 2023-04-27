@@ -4,7 +4,7 @@
 import { Telegraf } from 'telegraf';
 import Settings from './src/settings.js';
 
-import { balance, deposit } from './src/commands.js';
+import { balance, depositStart, depositEnd } from './src/commands.js';
 
 const bot = new Telegraf(Settings.token);
 
@@ -14,15 +14,16 @@ const helpHTML = [
     '/ingresar\n  Incrementa tu saldo actual (la cantidad se suma a lo que hubiera)',
 ].join('\n');
 
-bot.command('start', function (ctx) {
+bot.command('start', (ctx) => {
     ctx.replyWithHTML(helpHTML);
 });
-bot.command('ayuda', function (ctx) {
+bot.command('ayuda', (ctx) => {
     ctx.replyWithHTML(helpHTML);
 });
 
 bot.command('saldo', balance);
-bot.command('ingresar', deposit);
+bot.command('ingresar', depositStart);
+bot.hears(/[\d.]+/, depositEnd);
 
 bot.launch();
 
