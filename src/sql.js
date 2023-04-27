@@ -3,22 +3,22 @@
 
 'use strict';
 
-const mariadb = require('mariadb'),
-    settings = require('./settings.js'),
-    sqlstring = require('sqlstring');
+import MariaDB from 'mariadb';
+import Settings from './settings.js';
+import SqlString from 'sqlstring';
 
-const pool = mariadb.createPool({
-    host: settings.database.host,
-    user: settings.database.user,
-    password: settings.database.password,
-    database: settings.database.database,
-    connectionLimit: settings.database.connectionLimit,
+const pool = MariaDB.createPool({
+    host: Settings.database.host,
+    user: Settings.database.user,
+    password: Settings.database.password,
+    database: Settings.database.database,
+    connectionLimit: Settings.database.connectionLimit,
 });
 
-const sql = {};
+const SQL = {};
 // dateFormat = 'yyyy-LL-dd HH:mm';
 
-sql.runQuery = async function (query) {
+SQL.runQuery = async function (query) {
     let conn;
 
     try {
@@ -31,9 +31,25 @@ sql.runQuery = async function (query) {
     }
 };
 
-sql.getUser = async function (id) {
-    const query = sqlstring.format('SELECT * FROM users WHERE id=?;', [id]);
-    return sql.runQuery(query);
+SQL.getUser = async function (id) {
+    const query = SqlString.format('SELECT * FROM users WHERE id=?;', [id]);
+    return SQL.runQuery(query);
 };
 
-module.exports = sql;
+SQL.createUser = async function (id, first, last, username) {
+    const query = SqlString.format(
+        'INSERT INTO users (id, first_name, last_name, username) VALUES (?, ?, ?, ?);',
+        [id, first, last, username]
+    );
+    return SQL.runQuery(query);
+};
+
+SQL.updateBalance = async function (id, newBalance) {
+    const query = SqlString.format('UPDATE users SET balance=? WHERE id=?', [
+        newBalance,
+        id,
+    ]);
+    return SQL.runQuery(query);
+};
+
+export default SQL;

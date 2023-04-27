@@ -10,5 +10,5 @@ export default {
         database: 'akihabarra',
         connectionLimit: 100,
     },
-    token: '',
+    token: '6060256186:AAE0R3LuoXA61Gkoj6ktwQbtUImBroa_Nvo',
 };
