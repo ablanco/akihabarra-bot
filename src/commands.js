@@ -95,6 +95,29 @@ const newArticleEnd = async function (ctx) {
     ctx.replyWithHTML('El artículo se ha guardado con éxito');
 };
 
+const deleteArticleStart = async function (ctx) {
+    console.log('Command: deleteArticleStart');
+
+    const articles = await Utils.getSortedArticles();
+
+    ctx.reply(
+        'Elige un artículo para borrar:',
+        Markup.inlineKeyboard(
+            articles.map((article) => {
+                return Markup.button.callback(article.name, `d${article.id}`);
+            })
+        )
+    );
+};
+
+const deleteArticleEnd = async function (ctx) {
+    console.log('Command: deleteArticleEnd');
+
+    await SQL.deleteArticle(ctx.match[0].slice(1));
+
+    ctx.replyWithHTML(['Artículo borrado con éxito'].join('\n'));
+};
+
 const prices = async function (ctx) {
     console.log('Command: prices');
 
@@ -114,10 +137,10 @@ const buyStart = async function (ctx) {
     const articles = await Utils.getSortedArticles();
 
     ctx.reply(
-        'Elige un artículo:',
+        'Elige un artículo para comprar:',
         Markup.inlineKeyboard(
             articles.map((article) => {
-                return Markup.button.callback(article.name, article.id);
+                return Markup.button.callback(article.name, `b${article.id}`);
             })
         )
     );
@@ -127,7 +150,7 @@ const buyEnd = async function (ctx) {
     console.log('Command: buyEnd');
 
     let user = await Utils.getOrCreateUser(ctx.update.callback_query.from);
-    let article = await SQL.getArticle(ctx.match[0]);
+    let article = await SQL.getArticle(ctx.match[0].slice(1));
     article = article[0];
     const balance = parseFloat(user.balance) - parseFloat(article.price);
 
@@ -180,6 +203,8 @@ export {
     changeBalanceEnd,
     newArticleStart,
     newArticleEnd,
+    deleteArticleStart,
+    deleteArticleEnd,
     prices,
     buyStart,
     buyEnd,

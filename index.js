@@ -16,6 +16,8 @@ import {
     buyStart,
     buyEnd,
     sales,
+    deleteArticleStart,
+    deleteArticleEnd,
 } from './src/commands.js';
 
 const bot = new Telegraf(Settings.token);
@@ -37,6 +39,7 @@ bot.command('saldo', balance);
 bot.command('ingresar', depositStart);
 bot.command('modificar', changeBalanceStart);
 bot.command('nuevo', newArticleStart);
+bot.command('borrar', deleteArticleStart);
 bot.command('precios', prices);
 bot.command('comprar', buyStart);
 bot.command('historial', sales);
@@ -59,7 +62,8 @@ bot.hears(/^[a-zA-Z\s]+[\d.]+$/, (ctx) => {
     newArticleEnd(ctx);
 });
 
-bot.action(/.+/, buyEnd);
+bot.action(/d.+/, deleteArticleEnd);
+bot.action(/b.+/, buyEnd);
 
 bot.launch();
 

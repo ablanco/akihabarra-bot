@@ -69,6 +69,11 @@ SQL.createArticle = async function (name, price) {
     return SQL.runQuery(query);
 };
 
+SQL.deleteArticle = async function (id) {
+    const query = SqlString.format('DELETE FROM articles WHERE id=?;', [id]);
+    return SQL.runQuery(query);
+};
+
 SQL.getSales = async function (userId) {
     const query = SqlString.format(
         'SELECT * FROM sales WHERE user=? ORDER BY created DESC LIMIT 10;',
