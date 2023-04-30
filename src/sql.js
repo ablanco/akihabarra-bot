@@ -69,4 +69,20 @@ SQL.createArticle = async function (name, price) {
     return SQL.runQuery(query);
 };
 
+SQL.getSales = async function (userId) {
+    const query = SqlString.format(
+        'SELECT * FROM sales WHERE user=? ORDER BY created DESC LIMIT 10;',
+        [userId]
+    );
+    return SQL.runQuery(query);
+};
+
+SQL.registerSale = async function (userId, article, price) {
+    const query = SqlString.format(
+        'INSERT INTO sales (user, article, price) VALUES (?, ?, ?);',
+        [userId, article, price]
+    );
+    return SQL.runQuery(query);
+};
+
 export default SQL;

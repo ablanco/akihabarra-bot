@@ -134,11 +134,41 @@ const buyEnd = async function (ctx) {
     await SQL.updateBalance(ctx.from.id, balance);
     user = await Utils.getOrCreateUser(ctx.update.callback_query.from);
 
+    await SQL.registerSale(user.id, article.name, article.price);
+
     ctx.replyWithHTML(
         [
             'Artículo comprado con éxito.',
             `Tu nuevo saldo es: ${user.balance}€.`,
         ].join('\n')
+    );
+};
+
+const sales = async function (ctx) {
+    console.log('Command: sales');
+
+    const user = await Utils.getOrCreateUser(ctx.from);
+    const history = await SQL.getSales(user.id);
+    const response = ['Estas son tus últimas 10 compras:'];
+
+    ctx.replyWithHTML(
+        response
+            .concat(
+                history.map((sale) => {
+                    return [
+                        ' - ',
+                        sale.article,
+                        ' ',
+                        sale.price,
+                        '€     (',
+                        sale.created.toLocaleDateString('es-ES'),
+                        ' ',
+                        sale.created.toLocaleTimeString('es-ES'),
+                        ')',
+                    ].join('');
+                })
+            )
+            .join('\n')
     );
 };
 
@@ -153,4 +183,5 @@ export {
     prices,
     buyStart,
     buyEnd,
+    sales,
 };

@@ -15,6 +15,7 @@ import {
     prices,
     buyStart,
     buyEnd,
+    sales,
 } from './src/commands.js';
 
 const bot = new Telegraf(Settings.token);
@@ -38,6 +39,7 @@ bot.command('modificar', changeBalanceStart);
 bot.command('nuevo', newArticleStart);
 bot.command('precios', prices);
 bot.command('comprar', buyStart);
+bot.command('historial', sales);
 
 bot.hears(/^[\d.]+$/, (ctx) => {
     console.log('Hears: depositEnd & changeBalanceEnd');
