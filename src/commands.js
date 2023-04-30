@@ -103,9 +103,15 @@ const deleteArticleStart = async function (ctx) {
     ctx.reply(
         'Elige un artículo para borrar:',
         Markup.inlineKeyboard(
-            articles.map((article) => {
-                return Markup.button.callback(article.name, `d${article.id}`);
-            })
+            Utils.splitIntoChunks(
+                articles.map((article) => {
+                    return Markup.button.callback(
+                        article.name,
+                        `d${article.id}`
+                    );
+                }),
+                2
+            )
         )
     );
 };
@@ -139,9 +145,15 @@ const buyStart = async function (ctx) {
     ctx.reply(
         'Elige un artículo para comprar:',
         Markup.inlineKeyboard(
-            articles.map((article) => {
-                return Markup.button.callback(article.name, `b${article.id}`);
-            })
+            Utils.splitIntoChunks(
+                articles.map((article) => {
+                    return Markup.button.callback(
+                        article.name,
+                        `b${article.id}`
+                    );
+                }),
+                2
+            )
         )
     );
 };
