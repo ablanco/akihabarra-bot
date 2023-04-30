@@ -5,6 +5,16 @@ import SQL from './sql.js';
 
 const Utils = {};
 
+const compareArticles = (a, b) => {
+    if (a.name < b.name) {
+        return -1;
+    }
+    if (a.name > b.name) {
+        return 1;
+    }
+    return 0;
+};
+
 Utils.getOrCreateUser = async function (from) {
     let user = await SQL.getUser(from.id);
     if (user.length === 0) {
@@ -18,6 +28,12 @@ Utils.getOrCreateUser = async function (from) {
     }
     user = user[0];
     return user;
+};
+
+Utils.getSortedArticles = async function () {
+    const articles = await SQL.getArticles();
+    articles.sort(compareArticles);
+    return articles;
 };
 
 export default Utils;

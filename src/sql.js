@@ -56,6 +56,11 @@ SQL.getArticles = async function () {
     return SQL.runQuery('SELECT * FROM articles;');
 };
 
+SQL.getArticle = async function (id) {
+    const query = SqlString.format('SELECT * FROM articles WHERE id=?;', [id]);
+    return SQL.runQuery(query);
+};
+
 SQL.createArticle = async function (name, price) {
     const query = SqlString.format(
         'INSERT INTO articles (name, price) VALUES (?, ?);',

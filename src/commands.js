@@ -98,13 +98,47 @@ const newArticleEnd = async function (ctx) {
 const prices = async function (ctx) {
     console.log('Command: prices');
 
-    const articles = await SQL.getArticles();
+    const articles = await Utils.getSortedArticles();
     ctx.replyWithHTML(
         articles
             .map((article) => {
                 return `- ${article.name} => ${article.price}€`;
             })
             .join('\n')
+    );
+};
+
+const buyStart = async function (ctx) {
+    console.log('Command: buyStart');
+
+    const articles = await Utils.getSortedArticles();
+
+    ctx.reply(
+        'Elige un artículo:',
+        Markup.inlineKeyboard(
+            articles.map((article) => {
+                return Markup.button.callback(article.name, article.id);
+            })
+        )
+    );
+};
+
+const buyEnd = async function (ctx) {
+    console.log('Command: buyEnd');
+
+    let user = await Utils.getOrCreateUser(ctx.update.callback_query.from);
+    let article = await SQL.getArticle(ctx.match[0]);
+    article = article[0];
+    const balance = parseFloat(user.balance) - parseFloat(article.price);
+
+    await SQL.updateBalance(ctx.from.id, balance);
+    user = await Utils.getOrCreateUser(ctx.update.callback_query.from);
+
+    ctx.replyWithHTML(
+        [
+            'Artículo comprado con éxito.',
+            `Tu nuevo saldo es: ${user.balance}€.`,
+        ].join('\n')
     );
 };
 
@@ -117,4 +151,6 @@ export {
     newArticleStart,
     newArticleEnd,
     prices,
+    buyStart,
+    buyEnd,
 };
