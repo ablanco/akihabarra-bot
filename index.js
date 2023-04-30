@@ -4,7 +4,16 @@
 import { Telegraf } from 'telegraf';
 import Settings from './src/settings.js';
 
-import { balance, depositStart, depositEnd } from './src/commands.js';
+import {
+    balance,
+    depositStart,
+    depositEnd,
+    changeBalanceStart,
+    changeBalanceEnd,
+    newArticleStart,
+    newArticleEnd,
+    prices,
+} from './src/commands.js';
 
 const bot = new Telegraf(Settings.token);
 
@@ -23,7 +32,27 @@ bot.command('ayuda', (ctx) => {
 
 bot.command('saldo', balance);
 bot.command('ingresar', depositStart);
-bot.hears(/[\d.]+/, depositEnd);
+bot.command('modificar', changeBalanceStart);
+bot.command('nuevo', newArticleStart);
+bot.command('precios', prices);
+
+bot.hears(/^[\d.]+$/, (ctx) => {
+    console.log('Hears: depositEnd & changeBalanceEnd');
+    const msg = ctx.update.message;
+
+    if (msg.reply_to_message) {
+        if (msg.reply_to_message.text.indexOf('incrementarlo') > 0) {
+            depositEnd(ctx);
+        } else if (msg.reply_to_message.text.indexOf('reemplazo') > 0) {
+            changeBalanceEnd(ctx);
+        }
+    }
+});
+bot.hears(/^[a-zA-Z\s]+[\d.]+$/, (ctx) => {
+    console.log('Hears: newArticleEnd');
+
+    newArticleEnd(ctx);
+});
 
 bot.launch();
 

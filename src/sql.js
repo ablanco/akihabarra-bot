@@ -45,10 +45,22 @@ SQL.createUser = async function (id, first, last, username) {
 };
 
 SQL.updateBalance = async function (id, newBalance) {
-    const query = SqlString.format('UPDATE users SET balance=? WHERE id=?', [
+    const query = SqlString.format('UPDATE users SET balance=? WHERE id=?;', [
         newBalance,
         id,
     ]);
+    return SQL.runQuery(query);
+};
+
+SQL.getArticles = async function () {
+    return SQL.runQuery('SELECT * FROM articles;');
+};
+
+SQL.createArticle = async function (name, price) {
+    const query = SqlString.format(
+        'INSERT INTO articles (name, price) VALUES (?, ?);',
+        [name, price]
+    );
     return SQL.runQuery(query);
 };
 
