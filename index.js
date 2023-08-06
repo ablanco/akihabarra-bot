@@ -18,6 +18,7 @@ import {
     sales,
     deleteArticleStart,
     deleteArticleEnd,
+    undo,
 } from './src/commands.js';
 
 const bot = new Telegraf(Settings.token);
@@ -32,6 +33,7 @@ const helpHTML = [
     '/precios\n  Muestra el listado de artículos y sus precios',
     '/comprar\n  Elige un artículo y decuéntalo de tu saldo',
     '/historial\n  Revisa tus últimas 10 compras',
+    '/deshacer\n  Deshace la última compra realizada',
 ].join('\n');
 
 bot.command('start', (ctx) => {
@@ -49,6 +51,7 @@ bot.command('borrar', deleteArticleStart);
 bot.command('precios', prices);
 bot.command('comprar', buyStart);
 bot.command('historial', sales);
+bot.command('deshacer', undo)
 
 bot.hears(/^[\d.]+$/, (ctx) => {
     console.log('Hears: depositEnd & changeBalanceEnd');
