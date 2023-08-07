@@ -207,6 +207,27 @@ const sales = async function (ctx) {
     );
 };
 
+const undo = async function (ctx) {
+    console.log('Command: undo');
+
+    const user = await Utils.getOrCreateUser(ctx.from);
+    const lastSale = await SQL.getSales(user.id, 1);
+
+    if(lastSale==null){
+        response = 'No tiene ninguna compra registrada para deshacer.'
+    } else {
+        await SQL.deleteSale(lastSale.id);
+        
+        await SQL.updateBalance(user.id, balance + lastSale.price);
+        user = await Utils.getOrCreateUser(msg.from);
+
+        response = `La compra de ${lastSale.article} por ${lastSale.price}€ ha sido deshecha.
+        Su saldo vuelve a ser ${user.balance}€`
+    }
+    
+    ctx.replyWithHTML(response);
+};
+
 export {
     balance,
     depositStart,
@@ -221,4 +242,5 @@ export {
     buyStart,
     buyEnd,
     sales,
+    undo,
 };
