@@ -51,7 +51,7 @@ bot.command('borrar', deleteArticleStart);
 bot.command('precios', prices);
 bot.command('comprar', buyStart);
 bot.command('historial', sales);
-bot.command('deshacer', undo)
+bot.command('deshacer', undo);
 
 bot.hears(/^[\d.]+$/, (ctx) => {
     console.log('Hears: depositEnd & changeBalanceEnd');
