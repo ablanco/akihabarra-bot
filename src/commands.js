@@ -173,7 +173,7 @@ const buyEnd = async function (ctx) {
 
     ctx.replyWithHTML(
         [
-            'Artículo comprado con éxito.',
+            `Artículo <i>${article.name}(${article.price}€)</i> comprado con éxito.`,
             `Tu nuevo saldo es: ${user.balance}€.`,
         ].join('\n')
     );
