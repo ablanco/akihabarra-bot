@@ -6,6 +6,7 @@
 import MariaDB from 'mariadb';
 import Settings from './settings.js';
 import SqlString from 'sqlstring';
+import emojiRegex from 'emoji-regex';
 
 const pool = MariaDB.createPool({
     host: Settings.database.host,
@@ -14,6 +15,10 @@ const pool = MariaDB.createPool({
     database: Settings.database.database,
     connectionLimit: Settings.database.connectionLimit,
 });
+
+const removeEmojis = function (input) {
+    return input.replace(emojiRegex(), '');
+};
 
 const SQL = {};
 // dateFormat = 'yyyy-LL-dd HH:mm';
@@ -39,7 +44,7 @@ SQL.getUser = async function (id) {
 SQL.createUser = async function (id, first, last, username) {
     const query = SqlString.format(
         'INSERT INTO users (id, first_name, last_name, username) VALUES (?, ?, ?, ?);',
-        [id, first, last, username]
+        [id, removeEmojis(first), removeEmojis(last), username]
     );
     return SQL.runQuery(query);
 };
@@ -64,7 +69,7 @@ SQL.getArticle = async function (id) {
 SQL.createArticle = async function (name, price) {
     const query = SqlString.format(
         'INSERT INTO articles (name, price) VALUES (?, ?);',
-        [name, price]
+        [removeEmojis(name), price]
     );
     return SQL.runQuery(query);
 };
