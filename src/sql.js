@@ -100,4 +100,18 @@ SQL.deleteSale = async function (id) {
     return SQL.runQuery(query);
 };
 
+SQL.getSalesStats = async function (userId) {
+    const query = SqlString.format(
+        'SELECT article, COUNT(*) as "count" FROM sales WHERE user=? GROUP BY article;',
+        [userId]
+    );
+    return SQL.runQuery(query);
+};
+
+SQL.getSalesGlobalStats = async function () {
+    const query =
+        'SELECT article, COUNT(*) as "count" FROM sales GROUP BY article;';
+    return SQL.runQuery(query);
+};
+
 export default SQL;

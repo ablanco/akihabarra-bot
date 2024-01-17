@@ -230,6 +230,35 @@ const undo = async function (ctx) {
     ctx.replyWithHTML(response);
 };
 
+const stats = async function (ctx) {
+    console.log('Command: stats');
+
+    const user = await Utils.getOrCreateUser(ctx.from);
+    const stats = await SQL.getSalesStats(user.id);
+
+    ctx.replyWithHTML(
+        stats
+            .map((entry) => {
+                return `- ${entry.article}: ${entry.count}`;
+            })
+            .join('\n')
+    );
+};
+
+const globalStats = async function (ctx) {
+    console.log('Command: global stats');
+
+    const stats = await SQL.getSalesGlobalStats();
+
+    ctx.replyWithHTML(
+        stats
+            .map((entry) => {
+                return `- ${entry.article}: ${entry.count}`;
+            })
+            .join('\n')
+    );
+};
+
 export {
     balance,
     depositStart,
@@ -245,4 +274,6 @@ export {
     buyEnd,
     sales,
     undo,
+    stats,
+    globalStats,
 };
