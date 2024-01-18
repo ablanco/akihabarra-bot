@@ -37,7 +37,7 @@ const helpHTML = [
     '/historial\n  Revisa tus últimas 10 compras',
     '/deshacer\n  Deshace la última compra realizada',
     '/estadisticas\n  Muestra tus productos más comprados',
-    '/estadisticasGlobales\n  Muestra los productos más comprados por todos los usuarios',
+    '/global\n  Muestra los productos más comprados por todos los usuarios',
 ].join('\n');
 
 bot.command('start', (ctx) => {
@@ -57,7 +57,7 @@ bot.command('comprar', buyStart);
 bot.command('historial', sales);
 bot.command('deshacer', undo);
 bot.command('estadisticas', stats);
-bot.command('estadisticasGlobales', globalStats);
+bot.command('global', globalStats);
 
 bot.hears(/^[\d.]+$/, (ctx) => {
     console.log('Hears: depositEnd & changeBalanceEnd');
