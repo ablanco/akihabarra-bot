@@ -164,6 +164,12 @@ const buyEnd = async function (ctx) {
     let user = await Utils.getOrCreateUser(ctx.update.callback_query.from);
     let article = await SQL.getArticle(ctx.match[0].slice(1));
     article = article[0];
+
+    if (article == null) {
+        ctx.replyWithHTML('Artículo no encontrado. Prueba a /comprar de nuevo.');
+        return;
+    }
+
     const balance = parseFloat(user.balance) - parseFloat(article.price);
 
     await SQL.updateBalance(ctx.from.id, balance);

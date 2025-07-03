@@ -27,13 +27,13 @@ const bot = new Telegraf(Settings.token);
 
 const helpHTML = [
     '/ayuda\n  Muestra este mensaje de ayuda',
+    '/comprar\n  Elige un artículo y decuéntalo de tu saldo',
+    '/precios\n  Muestra el listado de artículos y sus precios',
     '/saldo\n  Muestra tu saldo actual',
     '/ingresar\n  Incrementa tu saldo actual (la cantidad se suma a lo que hubiera)',
     '/modificar\n  Cambia tu saldo actual (reemplaza el valor que hubiera)',
     '/nuevo\n  Añade un artículo nuevo',
     '/borrar\n  Elimina un artículo existente',
-    '/precios\n  Muestra el listado de artículos y sus precios',
-    '/comprar\n  Elige un artículo y decuéntalo de tu saldo',
     '/historial\n  Revisa tus últimas 10 compras',
     '/deshacer\n  Deshace la última compra realizada',
     '/estadisticas\n  Muestra tus productos más comprados',
