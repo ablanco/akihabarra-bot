@@ -3,6 +3,7 @@
 
 import { Telegraf } from 'telegraf';
 import Settings from './src/settings.js';
+import SQL from './src/sql.js';
 
 import {
     balance,
@@ -83,5 +84,9 @@ bot.action(/b.+/, buyEnd);
 bot.launch();
 
 // Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.once(signal, async () => {
+        bot.stop(signal);
+        await SQL.close();
+    });
+}

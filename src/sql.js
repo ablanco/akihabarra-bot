@@ -5,113 +5,138 @@
 
 import MariaDB from 'mariadb';
 import Settings from './settings.js';
-import SqlString from 'sqlstring';
+import pg from 'pg';
 import emojiRegex from 'emoji-regex';
-
-const pool = MariaDB.createPool({
-    host: Settings.database.host,
-    user: Settings.database.user,
-    password: Settings.database.password,
-    database: Settings.database.database,
-    connectionLimit: Settings.database.connectionLimit,
-});
 
 const removeEmojis = function (input) {
     return input.replace(emojiRegex(), '');
 };
 
-const SQL = {};
-// dateFormat = 'yyyy-LL-dd HH:mm';
-
-SQL.runQuery = async function (query) {
-    let conn;
-
-    try {
-        conn = await pool.getConnection();
-        return conn.query(query);
-    } finally {
-        if (conn) {
-            conn.end();
-        }
+// Query templates here contain placeholders only, never literal question marks.
+export function createSQL(config) {
+    const engine = config.engine || 'mariadb';
+    if (!['mariadb', 'postgresql'].includes(engine)) {
+        throw new Error('DB_ENGINE must be mariadb or postgresql');
     }
-};
+    const options = {
+        host: config.host,
+        port: config.port,
+        user: config.user,
+        password: config.password,
+        database: config.database,
+    };
+    let pool;
+    const getPool = () =>
+        (pool ??=
+            engine === 'postgresql'
+                ? new pg.Pool({ ...options, max: config.connectionLimit })
+                : MariaDB.createPool({
+                      ...options,
+                      connectionLimit: config.connectionLimit,
+                      timezone: '+00:00',
+                      dateStrings: true,
+                  }));
+    const userColumn = engine === 'postgresql' ? '"user"' : '`user`';
+    const SQL = {};
 
-SQL.getUser = async function (id) {
-    const query = SqlString.format('SELECT * FROM users WHERE id=?;', [id]);
-    return SQL.runQuery(query);
-};
+    SQL.runQuery = async function (query, values = []) {
+        if (engine === 'postgresql') {
+            let index = 0;
+            const text = query.replace(/\?/g, () => `$${++index}`);
+            return (await getPool().query(text, values)).rows;
+        }
+        const result = await getPool().query(query, values);
+        // Older MariaDB connectors parse UTC session timestamps as local dates.
+        // Read strings and attach UTC explicitly to preserve the stored instant.
+        if (Array.isArray(result)) {
+            for (const row of result) {
+                for (const column of ['created', 'modified']) {
+                    if (typeof row[column] === 'string') {
+                        row[column] = new Date(
+                            row[column].replace(' ', 'T') + 'Z'
+                        );
+                    }
+                }
+            }
+        }
+        return result;
+    };
 
-SQL.createUser = async function (id, first, last, username) {
-    const query = SqlString.format(
-        'INSERT INTO users (id, first_name, last_name, username) VALUES (?, ?, ?, ?);',
-        [id, removeEmojis(first), removeEmojis(last), username]
-    );
-    return SQL.runQuery(query);
-};
+    SQL.close = async () => {
+        if (pool) {
+            await pool.end();
+        }
+    };
 
-SQL.updateBalance = async function (id, newBalance) {
-    const query = SqlString.format('UPDATE users SET balance=? WHERE id=?;', [
-        newBalance,
-        id,
-    ]);
-    return SQL.runQuery(query);
-};
+    SQL.getUser = async function (id) {
+        return SQL.runQuery('SELECT * FROM users WHERE id=?;', [id]);
+    };
 
-SQL.getArticles = async function () {
-    return SQL.runQuery('SELECT * FROM articles;');
-};
+    SQL.createUser = async function (id, first, last, username) {
+        return SQL.runQuery(
+            'INSERT INTO users (id, first_name, last_name, username) VALUES (?, ?, ?, ?);',
+            [id, removeEmojis(first), removeEmojis(last), username]
+        );
+    };
 
-SQL.getArticle = async function (id) {
-    const query = SqlString.format('SELECT * FROM articles WHERE id=?;', [id]);
-    return SQL.runQuery(query);
-};
+    SQL.updateBalance = async function (id, newBalance) {
+        return SQL.runQuery('UPDATE users SET balance=? WHERE id=?;', [
+            newBalance,
+            id,
+        ]);
+    };
 
-SQL.createArticle = async function (name, price) {
-    const query = SqlString.format(
-        'INSERT INTO articles (name, price) VALUES (?, ?);',
-        [removeEmojis(name), price]
-    );
-    return SQL.runQuery(query);
-};
+    SQL.getArticles = async function () {
+        return SQL.runQuery('SELECT * FROM articles;');
+    };
 
-SQL.deleteArticle = async function (id) {
-    const query = SqlString.format('DELETE FROM articles WHERE id=?;', [id]);
-    return SQL.runQuery(query);
-};
+    SQL.getArticle = async function (id) {
+        return SQL.runQuery('SELECT * FROM articles WHERE id=?;', [id]);
+    };
 
-SQL.getSales = async function (userId, salesNumber = 10) {
-    const query = SqlString.format(
-        'SELECT * FROM sales WHERE user=? ORDER BY created DESC LIMIT ?;',
-        [userId, salesNumber]
-    );
-    return SQL.runQuery(query);
-};
+    SQL.createArticle = async function (name, price) {
+        return SQL.runQuery(
+            'INSERT INTO articles (name, price) VALUES (?, ?);',
+            [removeEmojis(name), price]
+        );
+    };
 
-SQL.registerSale = async function (userId, article, price) {
-    const query = SqlString.format(
-        'INSERT INTO sales (user, article, price) VALUES (?, ?, ?);',
-        [userId, article, price]
-    );
-    return SQL.runQuery(query);
-};
+    SQL.deleteArticle = async function (id) {
+        return SQL.runQuery('DELETE FROM articles WHERE id=?;', [id]);
+    };
 
-SQL.deleteSale = async function (id) {
-    const query = SqlString.format('DELETE FROM sales WHERE id=?;', [id]);
-    return SQL.runQuery(query);
-};
+    SQL.getSales = async function (userId, salesNumber = 10) {
+        return SQL.runQuery(
+            `SELECT * FROM sales WHERE ${userColumn}=? ORDER BY created DESC, id DESC LIMIT ?;`,
+            [userId, salesNumber]
+        );
+    };
 
-SQL.getSalesStats = async function (userId) {
-    const query = SqlString.format(
-        'SELECT article, COUNT(*) as "count" FROM sales WHERE user=? GROUP BY article;',
-        [userId]
-    );
-    return SQL.runQuery(query);
-};
+    SQL.registerSale = async function (userId, article, price) {
+        return SQL.runQuery(
+            `INSERT INTO sales (${userColumn}, article, price) VALUES (?, ?, ?);`,
+            [userId, article, price]
+        );
+    };
 
-SQL.getSalesGlobalStats = async function () {
-    const query =
-        'SELECT article, COUNT(*) as "count" FROM sales GROUP BY article;';
-    return SQL.runQuery(query);
-};
+    SQL.deleteSale = async function (id) {
+        return SQL.runQuery('DELETE FROM sales WHERE id=?;', [id]);
+    };
 
-export default SQL;
+    SQL.getSalesStats = async function (userId) {
+        return SQL.runQuery(
+            `SELECT article, COUNT(*) as "count" FROM sales WHERE ${userColumn}=? GROUP BY article;`,
+            [userId]
+        );
+    };
+
+    SQL.getSalesGlobalStats = async function () {
+        return SQL.runQuery(
+            'SELECT article, COUNT(*) as "count" FROM sales GROUP BY article;'
+        );
+    };
+
+    return SQL;
+}
+
+export default createSQL(Settings.database);

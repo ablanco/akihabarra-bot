@@ -1,3 +1,4 @@
+-- MariaDB setup. PostgreSQL uses tables.postgresql.sql instead.
 CREATE DATABASE IF NOT EXISTS akihabarra CHARACTER SET utf8 COLLATE utf8_general_ci;
 CREATE USER 'akihabarabot'@'localhost' IDENTIFIED BY 'dev';
 GRANT ALL PRIVILEGES ON akihabarra.* TO 'akihabarabot'@'localhost';

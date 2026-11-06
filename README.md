@@ -2,13 +2,13 @@
 
 A Telegram bot for managing balances and purchases in a snack bar. Users can check their balance, add or set funds, buy listed articles, review or undo purchases, and view sales statistics.
 
-The application is built with Node.js, [Telegraf](https://telegraf.js.org/), and MariaDB. The SQL schema and setup script are in [`src/tables.sql`](src/tables.sql). PostgreSQL is not currently supported without adapting the database driver and schema.
+The application is built with Node.js, [Telegraf](https://telegraf.js.org/), and either MariaDB or PostgreSQL. Each deployment uses one engine, selected at startup; MariaDB remains the default.
 
 ## Requirements
 
-- Node.js with ES module support
+- Node.js 20 or later
 - A Telegram bot token
-- MariaDB
+- MariaDB or PostgreSQL
 
 ## Setup
 
@@ -18,13 +18,36 @@ The application is built with Node.js, [Telegraf](https://telegraf.js.org/), and
    npm install
    ```
 
-2. Create the database and tables by running `src/tables.sql` with a MariaDB account that can create databases and users. The script creates the `akihabarra` database and an `akihabarabot` user with the development password `dev`. Change that password for your deployment and update `src/settings.js` to match your database host, credentials, and database name.
+2. Set up your chosen database:
+
+   **MariaDB:** run the existing setup script with an account that can create databases and users. It creates `akihabarra` and a local `akihabarabot` user with development password `dev`. Change that password for your deployment.
 
    ```sh
    mariadb < src/tables.sql
    ```
 
-3. Set your Telegram bot token in `src/settings.js` (`token`). The current settings file contains both the database configuration and bot token; keep real credentials out of version control.
+   **PostgreSQL:** create a login and database using an administrator account, then apply the PostgreSQL schema as the database owner. The schema does not create accounts or databases.
+
+   ```sh
+   createuser --pwprompt akihabarabot
+   createdb --owner=akihabarabot akihabarra
+   psql -h localhost -U akihabarabot -d akihabarra -v ON_ERROR_STOP=1 -f src/tables.postgresql.sql
+   ```
+
+3. Configure the connection using environment variables or defaults in `src/settings.js`:
+
+   | Variable | Default |
+   | --- | --- |
+   | `DB_ENGINE` | `mariadb`; alternatively `postgresql` |
+   | `DB_HOST` | Existing settings-file host |
+   | `DB_PORT` | `3306` for MariaDB, `5432` for PostgreSQL |
+   | `DB_USER` | Existing settings-file user |
+   | `DB_PASSWORD` | Existing settings-file password; an empty override is allowed |
+   | `DB_NAME` | Existing settings-file database name |
+   | `DB_CONNECTION_LIMIT` | Existing settings-file limit |
+   | `TELEGRAM_TOKEN` | Existing settings-file token |
+
+   For example, set `DB_ENGINE=postgresql` and the remaining `DB_*` variables for your PostgreSQL connection before starting the bot. Keep real credentials out of version control. Configuration changes require a restart.
 
 4. Start the bot:
 
@@ -53,14 +76,52 @@ The bot's commands and replies are in Spanish:
 | `/estadisticas` | Show your purchase counts by article |
 | `/global` | Show purchase counts by article for all users |
 
-Balances are created on a user's first interaction with the bot. Article purchases and balance changes are stored in MariaDB.
+Balances are created on a user's first interaction with the bot. Article purchases and balance changes are stored in the configured database.
+
+## Migrate MariaDB data to PostgreSQL
+
+This is an offline copy. Stop the bot and all other writers, back up MariaDB, and create an empty PostgreSQL database with `src/tables.postgresql.sql` as described above. The migration refuses destinations containing any users, articles, or sales; it does not merge records or create the schema.
+
+Set source and destination connection variables (replace the placeholders):
+
+```sh
+export SOURCE_DB_HOST=localhost
+export SOURCE_DB_PORT=3306
+export SOURCE_DB_USER=akihabarabot
+export SOURCE_DB_PASSWORD='<source-password>'
+export SOURCE_DB_NAME=akihabarra
+export TARGET_DB_HOST=localhost
+export TARGET_DB_PORT=5432
+export TARGET_DB_USER=akihabarabot
+export TARGET_DB_PASSWORD='<destination-password>'
+export TARGET_DB_NAME=akihabarra
+npm run migrate:postgresql
+```
+
+The source engine is MariaDB and the destination engine is PostgreSQL. Source connection values fall back to the current database settings, with port `3306`; destination defaults are `localhost:5432`, user `postgres`, and database `akihabarra`. Explicit `SOURCE_DB_*` and `TARGET_DB_*` values are recommended. Both prefixes also accept `ENGINE`, which must match the required engine.
+
+The script reads MariaDB in a read-only snapshot and copies users, balances, articles, sales, IDs, and timestamps in batches. All destination inserts and identity-counter resets run in one transaction. It checks row counts before committing and leaves MariaDB untouched. A failed copy rolls back destination changes; fix the cause before retrying. After a connection loss during commit, inspect the destination before retrying: a nonempty destination is refused. Failure output deliberately excludes driver errors that might contain credentials or row data.
+
+After success, verify balances and history, set the bot's `DB_*` values for PostgreSQL, and restart it. To return to MariaDB before accepting new writes, restore the original connection settings. Writes accepted by PostgreSQL after cutover are not copied back automatically.
+
+Money remains exact two-decimal database values. Timestamps are transferred as UTC instants and returned to the bot as JavaScript dates; history is displayed in the bot process's local timezone. PostgreSQL sales statistics distinguish case and accents (`Cafe`, `cafe`, `Café`); MariaDB keeps its existing collation behavior. Article deletion continues to retain purchase history.
 
 ## Development
 
-`npm test` is currently a placeholder and does not run a test suite. ESLint is configured and can be run with:
-
 ```sh
+npm test
 npx eslint .
 ```
+
+`npm test` runs configuration tests and skips database integration tests unless explicitly enabled. The integration suite needs two **disposable, empty** databases named `akihabarra`; it creates tables and truncates data. Supply MariaDB's root login and PostgreSQL's postgres login via the test variables:
+
+```sh
+TEST_DATABASES=1 \
+TEST_MARIADB_PORT=3306 TEST_MARIADB_PASSWORD='<test-password>' \
+TEST_POSTGRESQL_PORT=5432 TEST_POSTGRESQL_PASSWORD='<test-password>' \
+npm run test:integration
+```
+
+Both test hosts are `127.0.0.1`. The suite covers SQL operations on each engine, value binding, exact decimals and large IDs, timestamps, grouping, constraints, migration across batch boundaries, refusing an occupied destination, rollback on failure, source preservation, and generated IDs after migration. It does not connect to Telegram.
 
 See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the code structure and database model.
