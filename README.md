@@ -34,7 +34,7 @@ The application is built with Node.js, [Telegraf](https://telegraf.js.org/), and
    psql -h localhost -U akihabarabot -d akihabarra -v ON_ERROR_STOP=1 -f src/tables.postgresql.sql
    ```
 
-3. Configure the connection using environment variables or defaults in `src/settings.js`:
+3. Configure every connection option in `src/settings.js` under `database`. Set `engine` to `mariadb` or `postgresql`; set `port` to a number or `null` to use the engine's default. Set the bot token in the same file. Environment variables are optional overrides:
 
    | Variable | Default |
    | --- | --- |
@@ -47,7 +47,7 @@ The application is built with Node.js, [Telegraf](https://telegraf.js.org/), and
    | `DB_CONNECTION_LIMIT` | Existing settings-file limit |
    | `TELEGRAM_TOKEN` | Existing settings-file token |
 
-   For example, set `DB_ENGINE=postgresql` and the remaining `DB_*` variables for your PostgreSQL connection before starting the bot. Keep real credentials out of version control. Configuration changes require a restart.
+   For PostgreSQL, set `database.engine` to `postgresql` and configure its host, port, user, password, and database name in the file. The corresponding `DB_*` variables, when set, override those file values. Keep real credentials out of version control. Configuration changes require a restart.
 
 4. Start the bot:
 
@@ -82,7 +82,7 @@ Balances are created on a user's first interaction with the bot. Article purchas
 
 This is an offline copy. Stop the bot and all other writers, back up MariaDB, and create an empty PostgreSQL database with `src/tables.postgresql.sql` as described above. The migration refuses destinations containing any users, articles, or sales; it does not merge records or create the schema.
 
-Set source and destination connection variables (replace the placeholders):
+Configure every source and destination connection field under `migration.source` and `migration.target` in `src/settings.js`, then run `npm run migrate:postgresql`. Environment variables are optional overrides; for example (replace the placeholders):
 
 ```sh
 export SOURCE_DB_HOST=localhost
@@ -98,11 +98,11 @@ export TARGET_DB_NAME=akihabarra
 npm run migrate:postgresql
 ```
 
-The source engine is MariaDB and the destination engine is PostgreSQL. Source connection values fall back to the current database settings, with port `3306`; destination defaults are `localhost:5432`, user `postgres`, and database `akihabarra`. Explicit `SOURCE_DB_*` and `TARGET_DB_*` values are recommended. Both prefixes also accept `ENGINE`, which must match the required engine.
+The source engine is MariaDB and the destination engine is PostgreSQL. The `SOURCE_DB_*` and `TARGET_DB_*` variables override their respective file settings. Both prefixes also accept `ENGINE` and `CONNECTION_LIMIT`; the engines must match the required source and destination.
 
 The script reads MariaDB in a read-only snapshot and copies users, balances, articles, sales, IDs, and timestamps in batches. All destination inserts and identity-counter resets run in one transaction. It checks row counts before committing and leaves MariaDB untouched. A failed copy rolls back destination changes; fix the cause before retrying. After a connection loss during commit, inspect the destination before retrying: a nonempty destination is refused. Failure output deliberately excludes driver errors that might contain credentials or row data.
 
-After success, verify balances and history, set the bot's `DB_*` values for PostgreSQL, and restart it. To return to MariaDB before accepting new writes, restore the original connection settings. Writes accepted by PostgreSQL after cutover are not copied back automatically.
+After success, verify balances and history, set the bot's `database` settings for PostgreSQL, and restart it. To return to MariaDB before accepting new writes, restore the original connection settings. Writes accepted by PostgreSQL after cutover are not copied back automatically.
 
 Money remains exact two-decimal database values. Timestamps are transferred as UTC instants and returned to the bot as JavaScript dates; history is displayed in the bot process's local timezone. PostgreSQL sales statistics distinguish case and accents (`Cafe`, `cafe`, `Café`); MariaDB keeps its existing collation behavior. Article deletion continues to retain purchase history.
 

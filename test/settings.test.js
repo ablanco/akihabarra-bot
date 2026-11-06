@@ -1,6 +1,40 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getDatabaseSettings } from '../src/settings.js';
+import Settings, { getDatabaseSettings } from '../src/settings.js';
+
+test('file settings provide complete bot and migration connections', () => {
+    for (const config of [
+        Settings.database,
+        Settings.migration.source,
+        Settings.migration.target,
+    ]) {
+        const resolved = getDatabaseSettings('UNUSED_SETTINGS_TEST_', config);
+        for (const key of [
+            'engine',
+            'host',
+            'port',
+            'user',
+            'password',
+            'database',
+            'connectionLimit',
+        ]) {
+            assert.notEqual(resolved[key], undefined, key);
+        }
+    }
+    const configured = {
+        engine: 'postgresql',
+        host: 'db.example',
+        port: 5433,
+        user: 'user',
+        password: 'password',
+        database: 'snacks',
+        connectionLimit: 7,
+    };
+    assert.deepEqual(
+        getDatabaseSettings('UNUSED_SETTINGS_TEST_', configured),
+        configured
+    );
+});
 
 test('database settings preserve defaults and validate environment overrides', () => {
     const defaults = {

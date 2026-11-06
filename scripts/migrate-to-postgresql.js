@@ -144,18 +144,14 @@ if (
     import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
     try {
-        const source = getDatabaseSettings('SOURCE_DB_', {
-            ...Settings.database,
-            engine: 'mariadb',
-            port: 3306,
-        });
-        const target = getDatabaseSettings('TARGET_DB_', {
-            engine: 'postgresql',
-            host: 'localhost',
-            port: 5432,
-            user: 'postgres',
-            database: 'akihabarra',
-        });
+        const source = getDatabaseSettings(
+            'SOURCE_DB_',
+            Settings.migration.source
+        );
+        const target = getDatabaseSettings(
+            'TARGET_DB_',
+            Settings.migration.target
+        );
         const counts = await migrate(source, target);
         console.log(
             `Migrated ${counts.users} users, ${counts.articles} articles, ${counts.sales} sales.`

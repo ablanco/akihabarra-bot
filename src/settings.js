@@ -4,11 +4,34 @@
 const settings = {
     // https://mariadb.com/kb/en/library/getting-started-with-the-nodejs-connector/
     database: {
+        engine: 'mariadb', // 'mariadb' or 'postgresql'
         host: 'localhost',
+        port: null, // null selects 3306 for MariaDB or 5432 for PostgreSQL
         user: 'akihabarabot',
         password: 'dev',
         database: 'akihabarra',
         connectionLimit: 100,
+    },
+    // Used only by npm run migrate:postgresql.
+    migration: {
+        source: {
+            engine: 'mariadb',
+            host: 'localhost',
+            port: 3306,
+            user: 'akihabarabot',
+            password: 'dev',
+            database: 'akihabarra',
+            connectionLimit: 100,
+        },
+        target: {
+            engine: 'postgresql',
+            host: 'localhost',
+            port: 5432,
+            user: 'postgres',
+            password: '',
+            database: 'akihabarra',
+            connectionLimit: 10,
+        },
     },
     token: '',
 };
